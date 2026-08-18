@@ -1,0 +1,15 @@
+node_modules/
+lib/
+client.js
+.dsh/
+*.bak
+pnpm-workspace.yaml
+*.tgz
+coverage/
+.nyc_output/
+*.log
+.DS_Store
+.idea/
+.vscode/
+*.swp
+AGENTS.md
