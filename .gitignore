@@ -1,6 +1,5 @@
 node_modules/
-lib/
-client.js
+# Build output is COMMITTED so github: installs work out of the box.
 .dsh/
 *.bak
 pnpm-workspace.yaml
