@@ -39,7 +39,7 @@ loaded by Cordis and the browser half is served as
   provides the `desktopRuntime` service, so the button is enabled.
 - Pure `dsh web` (headless browser, no desktop shell): the button renders but is
   disabled with a note — the restart capability is not available there.
-- DSH core packages at `0.1.0-rc.6` (matches the installed DeepSeek Harness).
+- DSH core packages at `^0.1.0-rc.6` (compatible with the DeepSeek Harness Desktop runtime 0.1.0-rc.7; v0.1.1 widened the range so the DSH Desktop market verifier accepts the package).
 
 ## Restart mechanism
 
