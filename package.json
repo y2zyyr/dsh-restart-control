@@ -1,6 +1,6 @@
 {
-  "name": "dsh-restart-button",
-  "version": "0.1.5",
+  "name": "dsh-restart-control",
+  "version": "0.1.6",
   "description": "Adds a Restart DSH button to DSH Desktop Settings → General (通用设置).",
   "type": "module",
   "main": "lib/index.js",
@@ -73,10 +73,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/y2zyyr/dsh-restart-button.git"
+    "url": "git+https://github.com/y2zyyr/dsh-restart-control.git"
   },
   "bugs": {
-    "url": "https://github.com/y2zyyr/dsh-restart-button/issues"
+    "url": "https://github.com/y2zyyr/dsh-restart-control/issues"
   },
-  "homepage": "https://github.com/y2zyyr/dsh-restart-button#readme"
+  "homepage": "https://github.com/y2zyyr/dsh-restart-control#readme"
 }

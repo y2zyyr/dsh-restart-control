@@ -1,5 +1,5 @@
 // src/index.ts
-// Host half of dsh-restart-button.
+// Host half of dsh-restart-control.
 //
 //   Desktop path : when the Electron shell provides the `desktopRuntime`
 //                  service, POST /restart calls its official
@@ -22,12 +22,12 @@
 //                  { restartable, mode }, which drives the client row.
 import type { DshContext, WebServerLike } from './dsh.ts';
 
-export const name = 'dsh-restart-button'; // stable plugin identity (loader id)
+export const name = 'dsh-restart-control'; // stable plugin identity (must match package name)
 /** The route service is injected by the DSH loader before apply() runs. */
 export const inject = ['webServer'];
 
 /** Route prefix (loopback only). */
-const PREFIX = '/dsh-restart-button/api';
+const PREFIX = '/dsh-restart-control/api';
 /** Status: reported to the client so it can enable/disable the button. */
 const STATUS_PATH = PREFIX + '/status';
 /** Restart: the only mutation. */
@@ -166,7 +166,7 @@ async function readJsonBody(req: any): Promise<unknown> {
 function registerApiRoutes(ctx: DshContext, deps: RestartDeps): void {
   const webServer: WebServerLike | undefined = ctx.webServer;
   if (webServer === undefined || typeof webServer.register !== 'function') {
-    ctx.logger?.warn?.('dsh-restart-button: webServer unavailable; status/restart routes not registered');
+    ctx.logger?.warn?.('dsh-restart-control: webServer unavailable; status/restart routes not registered');
     return;
   }
   const dispose = webServer.register({
@@ -201,7 +201,7 @@ function registerApiRoutes(ctx: DshContext, deps: RestartDeps): void {
           try {
             await target.restart();
           } catch (e) {
-            ctx.logger?.error?.('dsh-restart-button: restart request failed', String((e as Error)?.message ?? e));
+            ctx.logger?.error?.('dsh-restart-control: restart request failed', String((e as Error)?.message ?? e));
           }
           return;
         }
@@ -216,7 +216,7 @@ function registerApiRoutes(ctx: DshContext, deps: RestartDeps): void {
           timeoutMs: RELAUNCH_BACKSTOP_MS,
         };
         if (!deps.spawnRelauncher(config)) {
-          ctx.logger?.error?.('dsh-restart-button: relauncher could not be spawned; keeping server up');
+          ctx.logger?.error?.('dsh-restart-control: relauncher could not be spawned; keeping server up');
           writeJson(res, 500, { ok: false, error: { code: 'relaunch-failed', message: 'relauncher unavailable' } });
           return;
         }
@@ -230,7 +230,7 @@ function registerApiRoutes(ctx: DshContext, deps: RestartDeps): void {
     },
   });
   if (typeof ctx.effect === 'function') {
-    ctx.effect(() => { const stop = dispose; return () => { try { stop?.(); } catch { /* noop */ } }; }, 'dsh-restart-button: routes');
+    ctx.effect(() => { const stop = dispose; return () => { try { stop?.(); } catch { /* noop */ } }; }, 'dsh-restart-control: routes');
   }
 }
 
@@ -244,8 +244,8 @@ function writeBootProbe(ctx: DshContext): void {
     const write = fsModule?.writeFileSync as ((p: string, d: string) => void) | undefined;
     const mkdir = fsModule?.mkdirSync as ((p: string, o?: unknown) => void) | undefined;
     if (write && mkdir) {
-      mkdir('/tmp/dsh-restart-button-test', { recursive: true });
-      write('/tmp/dsh-restart-button-test/loaded', new Date().toISOString() + '\n');
+      mkdir('/tmp/dsh-restart-control-test', { recursive: true });
+      write('/tmp/dsh-restart-control-test/loaded', new Date().toISOString() + '\n');
     }
   } catch { /* boot probe is best-effort */ }
 }

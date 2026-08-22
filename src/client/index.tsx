@@ -1,11 +1,11 @@
 // src/client/index.tsx
-// Client half of dsh-restart-button (unscoped npm name; must match the profile dependency key — DSH Desktop ≥ 2.0.2 validates package identity).
+// Client half of dsh-restart-control (unscoped npm name; must match the profile dependency key — DSH Desktop ≥ 2.0.2 validates package identity).
 //
 // Registers one compact preference row into the official General settings
 // section (`settings.general.item`, the same slot LanguageRow / AppearanceRow /
 // EnterBehaviorRow use). Order 30 places it directly below「繁忙时 Enter 键行为」
 // (composer-enter, order 20). The restart request goes through the plugin's OWN
-// browser-fenced host route (`/dsh-restart-button/api/restart`), so no core
+// browser-fenced host route (`/dsh-restart-control/api/restart`), so no core
 // apiproxy change is needed — the host route calls the official desktopRuntime
 // service (or refuses when absent, which disables the button).
 import { useCallback, useEffect, useState } from 'react';
@@ -15,13 +15,13 @@ import { en, LOCALE_NS, zh } from '../locale.ts';
 
 export const inject = ['slots', 'locale'];
 
-const API_PREFIX = '/dsh-restart-button/api';
+const API_PREFIX = '/dsh-restart-control/api';
 const STATUS_URL = API_PREFIX + '/status';
 const RESTART_URL = API_PREFIX + '/restart';
 const RECOVERY_TIMEOUT_MS = 30_000;
 const RECOVERY_POLL_MS = 250;
 
-const STYLE_ID = 'dsh-restart-button/row.css';
+const STYLE_ID = 'dsh-restart-control/row.css';
 const CSS = `.drb-row{border-bottom:1px solid var(--dsw-alias-border-l2);align-items:center;gap:12px;padding:16px 0;display:flex}
 .drb-rowText{flex-direction:column;flex:1;gap:4px;min-width:0;padding-right:48px;display:flex}
 .drb-title{color:var(--dsw-alias-label-primary);font-size:14px;font-weight:400;line-height:22px}
@@ -150,7 +150,7 @@ export function RestartRow({
   }, [restarting, onRestart]);
 
   return (
-    <div className="drb-row" data-dsh-restart-button="1">
+    <div className="drb-row" data-dsh-restart-control="1">
       <div className="drb-rowText">
         <div className="drb-title">{t('title')}</div>
         <div className="drb-desc">
@@ -187,7 +187,7 @@ export function RestartRow({
 
 /** Client plugin body: dictionaries + the General row + host round-trips. */
 export function apply(ctx: any): void {
-  ctx.effect(() => { ctx.locale.register(LOCALE_NS, { zh, en }); }, 'dsh-restart-button: dictionaries');
+  ctx.effect(() => { ctx.locale.register(LOCALE_NS, { zh, en }); }, 'dsh-restart-control: dictionaries');
   const t = ctx.locale.bind(LOCALE_NS) as Translate;
   let bound: { reconcile: (s: RestartStatus, v: number) => void; restarting: (v: number) => void; failed: (v: number) => void } | undefined;
   let currentStatus: RestartStatus = { restartable: false };

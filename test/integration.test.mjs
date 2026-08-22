@@ -28,7 +28,7 @@ test('registers restart route only when desktopRuntime is present; 202 + request
   applyPlugin(ctx);
   await tick();
 
-  const restartRoute = ws.routes.find((r) => r.path === '/dsh-restart-button/api');
+  const restartRoute = ws.routes.find((r) => r.path === '/dsh-restart-control/api');
   assert.ok(restartRoute, 'restart route should be registered when desktopRuntime present');
   assert.equal(restartRoute.kind, 'prefix');
 
@@ -36,7 +36,7 @@ test('registers restart route only when desktopRuntime is present; 202 + request
   const res = { statusCode: 0, setHeader() {}, end(b) { sent = b; } };
   const req = {
     method: 'POST',
-    url: '/dsh-restart-button/api/restart',
+    url: '/dsh-restart-control/api/restart',
     headers: { host: '127.0.0.1:50642', 'sec-fetch-site': 'same-origin', origin: 'http://127.0.0.1:50642' },
     [Symbol.asyncIterator]() { return (async function* () {})(); },
   };
@@ -59,7 +59,7 @@ test('desktopRuntime absent -> web mode reported as restartable', async () => {
   });
   await tick();
 
-  const restartRoute = ws.routes.find((r) => r.path === '/dsh-restart-button/api');
+  const restartRoute = ws.routes.find((r) => r.path === '/dsh-restart-control/api');
   assert.ok(restartRoute, 'API prefix route still registered (so client can probe status)');
 
   // status GET reports the web-mode facility
@@ -67,7 +67,7 @@ test('desktopRuntime absent -> web mode reported as restartable', async () => {
   const res = { statusCode: 0, setHeader() {}, end(b) { sent = b; } };
   const req = {
     method: 'GET',
-    url: '/dsh-restart-button/api/status',
+    url: '/dsh-restart-control/api/status',
     headers: { host: '127.0.0.1:50642', 'sec-fetch-site': 'same-origin', origin: 'http://127.0.0.1:50642' },
   };
   await restartRoute.handler(req, res);
@@ -90,14 +90,14 @@ test('web mode POST -> arms relauncher with captured argv/cwd, replies 202, term
   });
   await tick();
 
-  const restartRoute = ws.routes.find((r) => r.path === '/dsh-restart-button/api');
+  const restartRoute = ws.routes.find((r) => r.path === '/dsh-restart-control/api');
   assert.ok(restartRoute);
 
   let status = 0; let sent = null;
   const res = { statusCode: 0, setHeader() {}, end(b) { sent = b; } };
   const req = {
     method: 'POST',
-    url: '/dsh-restart-button/api/restart',
+    url: '/dsh-restart-control/api/restart',
     headers: { host: '127.0.0.1:50642', 'sec-fetch-site': 'same-origin', origin: 'http://127.0.0.1:50642' },
     [Symbol.asyncIterator]() { return (async function* () {})(); },
   };
@@ -125,12 +125,12 @@ test('web mode POST with failed spawn -> 500 and server stays up (no self-termin
   });
   await tick();
 
-  const restartRoute = ws.routes.find((r) => r.path === '/dsh-restart-button/api');
+  const restartRoute = ws.routes.find((r) => r.path === '/dsh-restart-control/api');
   let status = 0; let sent = null;
   const res = { statusCode: 0, setHeader() {}, end(b) { sent = b; } };
   const req = {
     method: 'POST',
-    url: '/dsh-restart-button/api/restart',
+    url: '/dsh-restart-control/api/restart',
     headers: { host: '127.0.0.1:50642', 'sec-fetch-site': 'same-origin', origin: 'http://127.0.0.1:50642' },
     [Symbol.asyncIterator]() { return (async function* () {})(); },
   };

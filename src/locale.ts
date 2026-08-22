@@ -1,7 +1,7 @@
 // src/locale.ts
 // Plugin-owned locale dictionaries (zh-CN + en). Core locale files are never
 // touched. Keys: General-settings row copy + native confirm dialog copy.
-export const LOCALE_NS = 'dsh-restart-button'; // stable locale namespace (loader id), independent of npm package name
+export const LOCALE_NS = 'dsh-restart-control';
 
 export const zh = {
   'title': '重启 DSH',

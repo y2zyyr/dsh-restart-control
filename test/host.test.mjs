@@ -44,7 +44,7 @@ async function testRestartRoute() {
 
   mod.apply(ctx);
 
-  const restartRoute = routes.find((r) => r.path === '/dsh-restart-button/api');
+  const restartRoute = routes.find((r) => r.path === '/dsh-restart-control/api');
   if (!restartRoute) throw new Error('restart route not registered with desktopRuntime');
   if (restartRoute.kind !== 'prefix') throw new Error('route kind must be prefix');
 
@@ -53,7 +53,7 @@ async function testRestartRoute() {
   const res = { statusCode: 0, setHeader() {}, end(b) { body = JSON.parse(b); } };
   const req = {
     method: 'POST',
-    url: '/dsh-restart-button/api/restart',
+    url: '/dsh-restart-control/api/restart',
     headers: { host: '127.0.0.1:50642', 'sec-fetch-site': 'same-origin', origin: 'http://127.0.0.1:50642' },
     [Symbol.asyncIterator]() { return (async function* () {})(); },
   };
