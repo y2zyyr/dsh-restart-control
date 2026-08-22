@@ -65,11 +65,24 @@ async function testRestartRoute() {
   console.log('PASS 2: restart route calls desktopRuntime.requestRestart (202)');
 }
 
-// ---- Test 3: no source export pollution ----
-const third = await import(hostPath);
-if (typeof third.apply !== 'function') throw new Error('apply missing');
-console.log('PASS 3: host bundle exports apply()');
+// ---- Test 3: loader metadata must declare the host service ----
+async function testLoaderMetadata() {
+  const mod = await import(hostPath);
+  if (!Array.isArray(mod.inject) || !mod.inject.includes('webServer')) {
+    throw new Error('host bundle must declare inject:[webServer] so DSH can boot the plugin');
+  }
+  console.log('PASS 3: host bundle declares webServer injection');
+}
+
+// ---- Test 4: no source export pollution ----
+async function testExports() {
+  const mod = await import(hostPath);
+  if (typeof mod.apply !== 'function') throw new Error('apply missing');
+  console.log('PASS 4: host bundle exports apply()');
+}
 
 testNoDangerousOps();
 await testRestartRoute();
-console.log('HOST TESTS: PASS (3/3)');
+await testLoaderMetadata();
+await testExports();
+console.log('HOST TESTS: PASS (4/4)');

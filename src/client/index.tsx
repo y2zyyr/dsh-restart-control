@@ -18,6 +18,8 @@ export const inject = ['slots', 'locale'];
 const API_PREFIX = '/dsh-restart-button/api';
 const STATUS_URL = API_PREFIX + '/status';
 const RESTART_URL = API_PREFIX + '/restart';
+const RECOVERY_TIMEOUT_MS = 30_000;
+const RECOVERY_POLL_MS = 250;
 
 const STYLE_ID = 'dsh-restart-button/row.css';
 const CSS = `.drb-row{border-bottom:1px solid var(--dsw-alias-border-l2);align-items:center;gap:12px;padding:16px 0;display:flex}
@@ -25,20 +27,30 @@ const CSS = `.drb-row{border-bottom:1px solid var(--dsw-alias-border-l2);align-i
 .drb-title{color:var(--dsw-alias-label-primary);font-size:14px;font-weight:400;line-height:22px}
 .drb-desc{color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:18px}`;
 
+type RestartMode = 'desktop' | 'web';
+
+interface RestartStatus {
+  restartable: boolean;
+  mode?: RestartMode;
+  pid?: number;
+}
+
 interface RowStoreSnapshot {
   restartable: boolean;
   restarting: boolean;
   error: boolean;
   revision: number;
+  mode?: RestartMode;
 }
 
 /** Row state mirror (same defineStore pattern as the official rows). */
 const store = defineStore({
   init: (): RowStoreSnapshot => ({ restartable: false, restarting: false, error: false, revision: -1 }),
   actions: {
-    reconcile: (d: RowStoreSnapshot, restartable: boolean, revision: number) => {
+    reconcile: (d: RowStoreSnapshot, status: { restartable: boolean; mode?: RestartMode }, revision: number) => {
       if (revision <= d.revision) return;
-      d.restartable = restartable;
+      d.restartable = status.restartable;
+      d.mode = status.mode;
       d.restarting = false;
       d.error = false;
       d.revision = revision;
@@ -61,15 +73,40 @@ const store = defineStore({
 type Translate = (key: string) => string;
 
 /** Probe host restart capability once per row mount. */
-async function fetchStatus(signal?: AbortSignal): Promise<boolean> {
+async function fetchStatus(signal?: AbortSignal): Promise<RestartStatus> {
   try {
     const res = await fetch(STATUS_URL, { method: 'GET', signal, cache: 'no-store' });
-    if (!res.ok) return false;
-    const json = (await res.json()) as { ok?: boolean; restartable?: boolean };
-    return json?.ok === true && json.restartable === true;
+    if (!res.ok) return { restartable: false };
+    const json = (await res.json()) as { ok?: boolean; restartable?: boolean; mode?: RestartMode; pid?: number };
+    const restartable = json?.ok === true && json.restartable === true;
+    return {
+      restartable,
+      mode: restartable ? json.mode : undefined,
+      pid: restartable && Number.isInteger(json.pid) ? json.pid : undefined,
+    };
   } catch {
-    return false;
+    return { restartable: false };
   }
+}
+
+/** Wait for the new web generation, then reload the enclosing browser panel. */
+async function waitForWebRecovery(previousPid?: number): Promise<boolean> {
+  const deadline = Date.now() + RECOVERY_TIMEOUT_MS;
+  let sawUnavailable = false;
+  while (Date.now() < deadline) {
+    const status = await fetchStatus();
+    if (!status.restartable) {
+      sawUnavailable = true;
+    } else if (status.mode === 'web' &&
+      (sawUnavailable || (previousPid !== undefined && status.pid !== undefined && status.pid !== previousPid))) {
+      if (typeof window !== 'undefined' && typeof window.location?.reload === 'function') {
+        window.location.reload();
+      }
+      return true;
+    }
+    await new Promise((resolve) => setTimeout(resolve, RECOVERY_POLL_MS));
+  }
+  return false;
 }
 
 export function RestartRow({
@@ -80,12 +117,13 @@ export function RestartRow({
 }: {
   t: Translate;
   useStore: <T>(selector: (s: RowStoreSnapshot) => T) => T;
-  onStatus: (status: { restartable: boolean }) => void;
+  onStatus: (status: RestartStatus) => void;
   onRestart: () => void;
 }): JSX.Element {
   const restartable = useStore((s) => s.restartable);
   const restarting = useStore((s) => s.restarting);
   const error = useStore((s) => s.error);
+  const mode = useStore((s) => s.mode);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
@@ -101,7 +139,7 @@ export function RestartRow({
   // Probe capability on mount.
   useEffect(() => {
     let alive = true;
-    fetchStatus().then((ok) => { if (alive) onStatus({ restartable: ok }); });
+    fetchStatus().then((status) => { if (alive) onStatus(status); });
     return () => { alive = false; };
   }, [onStatus]);
 
@@ -116,7 +154,9 @@ export function RestartRow({
       <div className="drb-rowText">
         <div className="drb-title">{t('title')}</div>
         <div className="drb-desc">
-          {error ? t('error.failed') : (restartable ? t('description') : t('busy.unsupported'))}
+          {error
+            ? t('error.failed')
+            : (restartable ? t(mode === 'web' ? 'description.web' : 'description') : t('busy.unsupported'))}
         </div>
       </div>
       <Button
@@ -132,7 +172,7 @@ export function RestartRow({
           open={confirmOpen}
           onClose={() => setConfirmOpen(false)}
           title={t('dialog.title')}
-          description={t('dialog.description')}
+          description={t(mode === 'web' ? 'dialog.description.web' : 'dialog.description')}
           footer={(
             <>
               <Button variant="outline" onClick={() => setConfirmOpen(false)}>{t('dialog.cancel')}</Button>
@@ -149,22 +189,33 @@ export function RestartRow({
 export function apply(ctx: any): void {
   ctx.effect(() => { ctx.locale.register(LOCALE_NS, { zh, en }); }, 'dsh-restart-button: dictionaries');
   const t = ctx.locale.bind(LOCALE_NS) as Translate;
-  let bound: { reconcile: (r: boolean, v: number) => void; restarting: (v: number) => void; failed: (v: number) => void } | undefined;
+  let bound: { reconcile: (s: RestartStatus, v: number) => void; restarting: (v: number) => void; failed: (v: number) => void } | undefined;
+  let currentStatus: RestartStatus = { restartable: false };
   let revision = 0;
   const bump = (): number => { revision += 1; return revision; };
 
-  const injected = (actions: { reconcile: (r: boolean, v: number) => void; restarting: (v: number) => void; failed: (v: number) => void }) => {
+  const injected = (actions: { reconcile: (s: RestartStatus, v: number) => void; restarting: (v: number) => void; failed: (v: number) => void }) => {
     bound = actions;
     return {
-      onStatus: (status: { restartable: boolean }) => void bound?.reconcile(status.restartable, bump()),
+      onStatus: (status: RestartStatus) => {
+        currentStatus = status;
+        void bound?.reconcile(status, bump());
+      },
       onRestart: () => {
+        const before = currentStatus;
         const rev = bump();
         void bound?.restarting(rev);
+        let recovery: Promise<boolean> | undefined;
+        const recover = (): Promise<boolean> => recovery ??= waitForWebRecovery(before.pid);
         fetch(RESTART_URL, { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}', cache: 'no-store' })
-          .then((res) => { void res; })
-          .catch(() => { void bound?.failed(bump()); });
-        // The host either returns 202 (process about to relaunch) or the socket
-        // drops mid-shutdown. Restarting state is intentionally sticky on success.
+          .then(async (res) => {
+            if (!res.ok) return false;
+            let body: { mode?: RestartMode } = {};
+            try { body = await res.json() as { mode?: RestartMode }; } catch { /* response may drop during shutdown */ }
+            return (body.mode ?? before.mode) === 'web' ? recover() : true;
+          })
+          .catch(() => before.mode === 'web' ? recover() : false)
+          .then((ok) => { if (!ok) void bound?.failed(bump()); });
       },
     };
   };

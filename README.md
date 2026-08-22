@@ -9,7 +9,12 @@ with one click, using DSH's **official** graceful restart facility.
 - Restart DSH Desktop from Settings → General (官方 slot：`settings.general.item`)
 - Uses the **official** DSH Desktop restart API
   (`ctx.desktopRuntime.requestRestart()` → graceful Cordis teardown +
-  `app.relaunch()` + `app.exit(0)`) — no shell, no kill, no sudo
+  `app.relaunch()` + `app.exit(0)`) when a desktop shell is present
+- **Pure `dsh --profile web` support** (v0.1.5): arms a detached relauncher,
+  then SIGTERMs its own process so the CLI's built-in handler performs the same
+  graceful Cordis teardown; the relauncher waits for the old pid to die and
+  re-execs the original argv/cwd verbatim, then the browser panel reloads on
+  the new generation — still no shell, no kill/pkill/sudo
 - Native confirmation dialog (native `Modal` + `Button` primitives) before restarting
 - Single-flight protection: while a restart is pending the button shows
   「正在重启…」and is disabled
@@ -42,9 +47,13 @@ loaded by Cordis and the browser half is served as
 ## Compatibility
 
 - DSH Desktop (Electron shell) running in `compatibility` or `advanced` mode —
-  provides the `desktopRuntime` service, so the button is enabled.
-- Pure `dsh web` (headless browser, no desktop shell): the button renders but is
-  disabled with a note — the restart capability is not available there.
+  provides the `desktopRuntime` service; the button restarts through the
+  official facade (`mode: "desktop"`).
+- Pure `dsh web` / `--profile web` (no desktop shell): the button restarts the
+  server process itself — graceful SIGTERM teardown + detached relauncher
+  re-execing the captured argv/cwd (`mode: "web"`). Requires a real Node host
+  process (always true for the host half); if spawning the relauncher fails the
+  route returns 500 and keeps the server up.
 - DSH core packages at `^0.1.0-rc.6` (compatible with the DeepSeek Harness Desktop runtime 0.1.0-rc.7; v0.1.1 widened the range so the DSH Desktop market verifier accepts the package).
 
 ## Restart mechanism
@@ -54,8 +63,13 @@ loopback / same-origin only) and calls the official
 `ctx.desktopRuntime.requestRestart()` when a desktop shell is present. The
 official implementation disposes the whole Cordis plugin tree (flushing settings /
 session state, 5 s grace), then `app.relaunch()` + `app.exit(0)`. This is a
-**graceful** restart — never a process kill. If the desktop runtime is absent, the
-route reports `restartable: false` and the client disables the button.
+**graceful** restart — never a process kill. Without a desktop shell the plugin
+uses its web path: it spawns a detached relauncher child FIRST, replies 202, then
+sends itself `SIGTERM` — the dsh CLI installs
+`process.on("SIGTERM") -> root fiber.dispose()`, so the identical graceful
+teardown runs before exit. The relauncher polls until the old pid is actually
+gone (bounded backstop, never double-spawns) and re-execs the captured
+argv/cwd verbatim. GET `/status` reports `{ ok, restartable, mode }`.
 
 ## Security
 
