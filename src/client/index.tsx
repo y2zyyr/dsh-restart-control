@@ -1,5 +1,5 @@
 // src/client/index.tsx
-// Client half of dsh-restart-button (@y2zyyr scoped npm package).
+// Client half of dsh-restart-button (unscoped npm name; must match the profile dependency key — DSH Desktop ≥ 2.0.2 validates package identity).
 //
 // Registers one compact preference row into the official General settings
 // section (`settings.general.item`, the same slot LanguageRow / AppearanceRow /

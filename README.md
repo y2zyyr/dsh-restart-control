@@ -23,11 +23,17 @@ Local install into a DSH web profile (additive, backed-up edits):
 
 1. Add to `~/.dsh/profiles/web/package.json` `dependencies`:
    ```json
-   "@y2zyyr/dsh-restart-button": "link:/path/to/dsh-restart-button"
+   "dsh-restart-button": "link:/path/to/dsh-restart-button"
    ```
-2. Add `@y2zyyr/dsh-restart-button` to `dsh.profile.bundles`.
+2. Add `dsh-restart-button` to `dsh.profile.bundles`.
 3. Run `pnpm install` in the profile directory.
 4. Restart DSH Desktop once so the new bundle's loader row activates.
+
+> **Naming rule (DSH Desktop ≥ 2.0.2):** the dependency key must be exactly the
+> plugin's `package.json` `name` (`dsh-restart-button`, unscoped). The desktop
+> validates that every bundle's resolved manifest name matches its reference name
+> and otherwise refuses to load the whole profile with
+> `profile package identity is invalid`. Do not alias the key to a scoped name.
 
 The plugin's own `cordis.patch.yml` registers the Loader entry; the host half is
 loaded by Cordis and the browser half is served as
