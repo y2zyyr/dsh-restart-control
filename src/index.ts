@@ -22,7 +22,7 @@
 //                  { restartable, mode }, which drives the client row.
 import type { DshContext, WebServerLike } from './dsh.ts';
 
-export const name = 'dsh-restart-control'; // stable plugin identity (must match package name)
+export const name = '@y2zyyr/dsh-restart-control'; // stable plugin identity (must match package name)
 /** The route service is injected by the DSH loader before apply() runs. */
 export const inject = ['webServer'];
 

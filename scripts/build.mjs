@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, '..');
-const PLUGIN_ID = 'dsh-restart-control';
+const PLUGIN_ID = '@y2zyyr/dsh-restart-control';
 const ENTRY_GLOBAL = '__dsh_restart_control_entry__';
 
 const hostExternals = [

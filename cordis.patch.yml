@@ -4,4 +4,4 @@
 # browser half (lib/client.js) a /plugins entry served by dsh-client-modules.
 - insert:
     - id: restart-button
-      name: 'dsh-restart-control'
+      name: '@y2zyyr/dsh-restart-control'

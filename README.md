@@ -10,7 +10,7 @@ with one click, using DSH's **official** graceful restart facility.
 - Uses the **official** DSH Desktop restart API
   (`ctx.desktopRuntime.requestRestart()` → graceful Cordis teardown +
   `app.relaunch()` + `app.exit(0)`) when a desktop shell is present
-- **Pure `dsh --profile web` support** (v0.1.6): arms a detached relauncher,
+- **Pure `dsh --profile web` support** (v0.1.7): arms a detached relauncher,
   then SIGTERMs its own process so the CLI's built-in handler performs the same
   graceful Cordis teardown; the relauncher waits for the old pid to die and
   re-execs the original argv/cwd verbatim, then the browser panel reloads on
@@ -28,21 +28,21 @@ Local install into a DSH web profile (additive, backed-up edits):
 
 1. Add to `~/.dsh/profiles/web/package.json` `dependencies`:
    ```json
-   "dsh-restart-control": "link:/path/to/dsh-restart-control"
+   "@y2zyyr/dsh-restart-control": "link:/path/to/dsh-restart-control"
    ```
-2. Add `dsh-restart-control` to `dsh.profile.bundles`.
+2. Add `@y2zyyr/dsh-restart-control` to `dsh.profile.bundles`.
 3. Run `pnpm install` in the profile directory.
 4. Restart DSH Desktop once so the new bundle's loader row activates.
 
 > **Naming rule (DSH Desktop ≥ 2.0.2):** the dependency key must be exactly the
-> plugin's `package.json` `name` (`dsh-restart-control`, unscoped). The desktop
+> plugin's `package.json` `name` (`@y2zyyr/dsh-restart-control`). The desktop
 > validates that every bundle's resolved manifest name matches its reference name
 > and otherwise refuses to load the whole profile with
 > `profile package identity is invalid`. Do not alias the key to a scoped name.
 
 The plugin's own `cordis.patch.yml` registers the Loader entry; the host half is
 loaded by Cordis and the browser half is served as
-`/plugins/dsh-restart-control/client.js`.
+`/plugins/@y2zyyr/dsh-restart-control/client.js`.
 
 ## Compatibility
 

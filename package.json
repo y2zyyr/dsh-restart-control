@@ -1,6 +1,6 @@
 {
-  "name": "dsh-restart-control",
-  "version": "0.1.6",
+  "name": "@y2zyyr/dsh-restart-control",
+  "version": "0.1.7",
   "description": "Adds a Restart DSH button to DSH Desktop Settings → General (通用设置).",
   "type": "module",
   "main": "lib/index.js",
